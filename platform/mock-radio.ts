@@ -2,99 +2,39 @@
  * Mock radio for interfacing with mock devices
  */
 
-export interface MockUDPListener {
-  onUDPMessage(msg: Buffer, rinfo: RemoteAddressInfo): void;
-}
-
-export class RemoteAddressInfo {
-  address: string;
-  family: string;
-  port: number;
-  size: number;
-  constructor(address: string, family: string, port: number, size: number) {
-    this.address = address;
-    this.family = family;
-    this.port = port;
-    this.size = size;
-  }
+export interface MockNetworkListener {
+  onNetworkMessage(msg: Buffer): void;
 }
 
 // Simulates a network with simple UDP messaging functionality
 export class MockNetwork {
-  udpListeners: Map<string, MockUDPListener[]>;
+  networkListeners: MockNetworkListener[] = [];
 
-  constructor() {
-    this.udpListeners = new Map<string, MockUDPListener[]>();
+  public registerNetworkListener(listener: MockNetworkListener) {
+    this.networkListeners.push(listener);
   }
 
-  public registerUDPListener(
-    listener: MockUDPListener,
-    port: number,
-    address: string
-  ) {
-    const key = address + ':' + port.toString();
-    if (this.udpListeners.has(key)) {
-      this.udpListeners[key].push(listener);
-      return;
-    }
-    this.udpListeners[key] = [listener];
-  }
-
-  public sendUDPMessage(
-    msg: Buffer,
-    port: number,
-    address: string,
-    fromPort: number,
-    fromAddress: string
-  ) {
-    const key = address + ':' + port.toString();
-    for (const listener of this.udpListeners[key]) {
-      const rinfo = {
-        port: fromPort,
-        address: fromAddress,
-      };
-      listener.onUDPMessage(msg, rinfo);
+  public sendNetworkMessage(msg: Buffer) {
+    for (const listener of this.networkListeners) {
+      listener.onNetworkMessage(msg);
     }
   }
 }
 
-export class UDPDevice {
+export class MockDevice {
   private deviceId: string;
-  private port: number;
-  private address: string;
   private network: MockNetwork;
 
-  public constructor(
-    deviceId: string,
-    network: MockNetwork,
-    port: number,
-    address: string
-  ) {
+  public constructor(deviceId: string, network: MockNetwork) {
     this.deviceId = deviceId;
     this.network = network;
-    this.port = port;
-    this.address = address;
   }
 
   public getDeviceId(): string {
     return this.deviceId;
   }
 
-  public getDevicePort(): number {
-    return this.port;
-  }
-
-  public triggerIdentify(
-    discoveryBuffer: Buffer,
-    discoveryPort: number,
-    disvoceryAddress: string
-  ): void {
-    this.network.sendUDPMessage(
-      discoveryBuffer,
-      discoveryPort,
-      disvoceryAddress,
-      this.port,
-      this.address
-    );
+  public triggerIdentify(discoveryBuffer: Buffer): void {
+    this.network.sendNetworkMessage(discoveryBuffer);
   }
 }

@@ -3,41 +3,22 @@
  */
 import test from 'ava';
 import cbor from 'cbor';
-import { UDPDevice, MockNetwork } from '../platform/mock-radio';
+import { MockNetwork, MockDevice } from '../platform/mock-radio';
+import { MockLocalHomePlatform } from '../platform/mock-local-home-platform';
 import { loadHomeApp } from '../platform/stub-setup';
-import {
-  MockLocalHomePlatform,
-  UDPScanConfig,
-  ScanState,
-} from '../platform/mock-local-home-platform';
 
 // Tests a UDP identify flow end-to-end
 test('udp-device-connects', async (t) => {
-  // Common address for all UDP messaging
-  const updAddress: string = '255.255.255.255';
-
-  // First, create a scan configuration
-  const scanConfig: UDPScanConfig = new UDPScanConfig(
-    ScanState.Unprovisioned,
-    updAddress,
-    3311,
-    3322,
-    'A5A5A5'
-  );
-
-  // Mock a UDP Network
+  // Mock a network
   const mockNetwork = new MockNetwork();
 
   // Mock the Local Home Platform
   const mockLocalHomePlatform = MockLocalHomePlatform.getInstance();
-  mockLocalHomePlatform.initializeRadio(mockNetwork, [scanConfig]);
+  // Register the Local Home Platform to the mock network
+  mockNetwork.registerNetworkListener(mockLocalHomePlatform);
 
-  const mockDevice = new UDPDevice(
-    'test-device-id',
-    mockNetwork,
-    12345,
-    updAddress
-  );
+  // Create a mock device and register to the mock network
+  const mockDevice = new MockDevice('test-device-id', mockNetwork);
 
   // Run Home App and set handlers
   // loadHomeApp('../bundle');
@@ -45,10 +26,11 @@ test('udp-device-connects', async (t) => {
   // Assert listen() was called and handlers were loaded
   t.is(mockLocalHomePlatform.isHomeAppReady(), true);
 
-  // Create promise to catch next deviceId registered
+  // Create promise to get next deviceId registered
   const connectedDeviceId: Promise<string> = mockLocalHomePlatform.getNextDeviceIdRegistered();
 
   // Trigger Identify message to be sent to the Local Home Platform's port
+  // This cbor buffer corresponds to the Local Home SDK Sample (https://github.com/actions-on-google/smart-home-local)
   mockDevice.triggerIdentify(
     cbor.encode({
       id: 'test-device-id',
@@ -56,9 +38,7 @@ test('udp-device-connects', async (t) => {
       hw_rev: '0.0.1',
       fw_rev: '1.2.3',
       channels: [12345],
-    }),
-    scanConfig.listenPort,
-    updAddress
+    })
   );
 
   t.is(await connectedDeviceId, mockDevice.getDeviceId());
