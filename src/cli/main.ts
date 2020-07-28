@@ -1,14 +1,17 @@
-import * as yargs from 'yargs';
+import yargs from 'yargs/yargs';
 import {Worker} from 'worker_threads';
 import {CommandProcessor} from './command-processor';
 
 const APP_INSTANCE_PATH = './build/src/cli/app-instance.js';
 
-const argv = yargs.usage('Usage $0 --app_path PATH').option('app_path', {
-  describe: 'The path of the Local Fulfillment App entry point',
-  type: 'string',
-  demandOption: false,
-}).argv;
+const argv = yargs()
+  .usage('Usage $0 --app_path PATH')
+  .options('app_path', {
+    describe: 'The path of the Local Fulfillment App entry point',
+    type: 'string',
+    demandOption: true,
+  })
+  .parse(process.argv.slice(2));
 
 async function main() {
   const worker = new Worker(APP_INSTANCE_PATH, {
@@ -27,6 +30,7 @@ async function main() {
       const commandProcessor = new CommandProcessor(worker);
       await commandProcessor.processUserInput();
       worker.terminate();
+      console.log('Exiting...');
     }
   });
 }

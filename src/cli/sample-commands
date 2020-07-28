@@ -1,8 +1,0 @@
-//Fails
---intent_type IDENTIFY --request_id sample-request --discovery_buffer invalidbuffer --device_id device-id-12 
-
-//Registers device id test-device-1
---intent_type IDENTIFY --request_id sample-request --discovery_buffer a56269646d746573742d6465766963652d69656d6f64656c61326668775f72657665302e302e316666775f72657665312e322e33686368616e6e656c7380 --device_id device-id-12 
-
-//Calls Execute with actions.devices.commands.ColorAbsolute
---intent_type EXECUTE --request_id sample-request --params {} --custom_data {} --command action.devices.commands.ColorAbsolute --device_id test-device-i

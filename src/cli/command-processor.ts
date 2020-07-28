@@ -1,46 +1,63 @@
 import {Worker} from 'worker_threads';
-import yargs = require('yargs');
+import yargs from 'yargs/yargs';
 import * as readline from 'readline';
 
+/**
+ * An interface to formalize the message being sent to the worker thread.
+ */
 export interface IntentMessage {
   intentType: string;
   requestId: string;
 }
 
+/**
+ * A class containing all parameters needed to process an Identify command.
+ */
 export class IdentifyMessage implements IntentMessage {
-  intentType: string;
+  intentType = 'INTENT';
   requestId: string;
   discoveryBuffer: string;
   deviceId: string;
-  constructor(
-    intentType: string,
-    requestId: string,
-    discoveryBuffer: string,
-    deviceId: string
-  ) {
-    this.intentType = intentType;
+
+  /**
+   * @param requestId  The request id for a triggered Identify request.
+   * @param discoveryBuffer  The discovery buffer to send in a triggered Identify request.
+   * @param deviceId  The device id for a triggered Identify request.
+   * @returns  A new IntentMessage instance.
+   */
+  constructor(requestId: string, discoveryBuffer: string, deviceId: string) {
     this.requestId = requestId;
     this.discoveryBuffer = discoveryBuffer;
     this.deviceId = deviceId;
   }
 }
 
+/**
+ * A class containing all parameters needed to process an Identify command.
+ */
 export class ExecuteMessage implements IntentMessage {
-  intentType: string;
+  intentType = 'EXECUTE';
   requestId: string;
   localDeviceId: string;
   executeCommand: string;
   params: Record<string, unknown>;
   customData: Record<string, unknown>;
+
+  /**
+   * @param requestId  The request id for a triggered Execute request.
+   * @param localDeviceId  The localDeviceId for a triggered Execute request.
+   * @param executeCommand  The single command string to set in the triggered Execute request.
+   * @param params  The params array for the single Execute command.
+   * @param customData  The customData array for the single Execute command.
+   * @returns  A new ExecuteCommand instance.
+   */
   constructor(
-    intentType: string,
     requestId: string,
     localDeviceId: string,
     executeCommand: string,
     params: Record<string, unknown>,
     customData: Record<string, unknown>
   ) {
-    this.intentType = intentType;
     this.requestId = requestId;
     this.localDeviceId = localDeviceId;
     this.executeCommand = executeCommand;
@@ -51,17 +68,13 @@ export class ExecuteMessage implements IntentMessage {
 
 export class CommandProcessor {
   private worker: Worker;
-  private readline: readline.Interface;
   constructor(worker: Worker) {
     this.worker = worker;
-    this.readline = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    });
   }
 
+  // Wrapper for argument parsing with yargs
   private async parseIntent(userCommand: string): Promise<IntentMessage> {
-    const argv = await yargs
+    const argv = await yargs()
       .option('intent_type', {
         describe: 'The Intent type',
         type: 'string',
@@ -80,7 +93,12 @@ export class CommandProcessor {
       .option('device_id', {
         describe: 'The device Id',
         type: 'string',
-        demandOption: true,
+        demandOption: false,
+      })
+      .option('local_device_id', {
+        describe: 'The local device Id',
+        type: 'string',
+        demandOption: false,
       })
       .option('command', {
         describe: 'The execute command to send to device_id',
@@ -99,64 +117,123 @@ export class CommandProcessor {
         demandOption: false,
       })
       .parse(userCommand, {}, (error, argv) => {
+        if (error !== null) {
+          throw error;
+        }
         return argv;
       });
+    /**
+     * Validate arguments and return an IntentMessage
+     */
     switch (argv.intent_type) {
       case 'IDENTIFY':
+        if (argv.discovery_buffer === undefined) {
+          throw new Error(
+            'discovery_buffer is required to trigger an Identify intent'
+          );
+        }
+        if (argv.device_id === undefined) {
+          throw new Error(
+            'device_id is required to trigger an Identify intent'
+          );
+        }
         return new IdentifyMessage(
-          'IDENTIFY',
           argv.request_id,
-          argv.discovery_buffer!,
+          argv.discovery_buffer,
           argv.device_id
         );
       case 'EXECUTE':
+        if (argv.local_device_id === undefined) {
+          throw new Error(
+            'local_device_id is required to trigger an Execute intent'
+          );
+        }
+        if (argv.command === undefined) {
+          throw new Error('command is required to trigger an Execute intent');
+        }
+        if (argv.params === undefined) {
+          throw new Error('paramns is required to trigger an Execute intent');
+        }
+        if (argv.custom_data === undefined) {
+          throw new Error(
+            'custom_data is required to trigger an Execute intent'
+          );
+        }
         return new ExecuteMessage(
-          'EXECUTE',
           argv.request_id,
-          argv.device_id,
-          argv.command!,
-          JSON.parse(argv.params!),
-          JSON.parse(argv.custom_data!)
+          argv.local_device_id,
+          argv.command,
+          JSON.parse(argv.params),
+          JSON.parse(argv.custom_data)
         );
+      default:
+        throw new Error('Unsupported value for intent_type argument.');
     }
-    throw new Error('Failed to parse intent');
   }
 
+  /**
+   * The main user input to response loop.
+   * Recieves raw user input and attempts to parse and forward
+   * messages to the worker thread.
+   */
   async processUserInput(): Promise<void> {
+    // Open a readline interface
+    const readlineInterface = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+
+    // Flag for signaling app exit
     let exit = false;
     while (!exit) {
+      // Wrap the asyncronous question/response sequence in a promise to delay execution.
       await new Promise(resolve => {
-        this.readline.question('Awaiting input...\n', async input => {
+        readlineInterface.question('Awaiting input...\n', async input => {
           if (input.length === 0) {
             resolve();
             return;
           }
-          const command = input.split(' ')[0];
-          if (command === 'exit') {
+
+          if (input === 'exit') {
+            // Set loop exit flag and return
             exit = true;
             resolve();
             return;
           }
-          /*
-          } else if (command !== 'send-intent') {
+
+          // Parses the first command
+          const commandindex = input.indexOf(' ');
+          const command = input.substr(0, commandindex);
+
+          if (command !== 'send-intent') {
             console.log(
               'Invalid command: ' +
                 command +
                 '\nValid commands: exit | send-intent'
             );
+            // Early exit on invalid command
             resolve();
             return;
-          }*/
+          }
+
+          // After validating first command, parse with member
           try {
-            const intentMessage = await this.parseIntent(input);
-            console.log(intentMessage);
+            const intentMessage = await this.parseIntent(
+              input.substring(commandindex)
+            );
+            // Post message to worker thread.
             this.worker.postMessage(intentMessage);
           } catch (error) {
-            console.log(error);
+            // Print the error message and continue the loop
+            console.log(error.message);
           }
           resolve();
         });
       });
     }
+
+    // Clean up the readline interface
+    readlineInterface.close();
+    return Promise.resolve();
   }
 }
