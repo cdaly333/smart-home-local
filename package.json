@@ -10,16 +10,21 @@
     "compile": "tsc",
     "test": "ava",
     "clean": "gts clean",
-    "lint": "eslint './src/**/*.ts' './test/**/*.ts'"
+    "lint": "eslint './src/**/*.ts' './test/**/*.ts'",
+    "cli": "node ./build/src/cli/main.js"
   },
   "dependencies": {
-    "ava": "^3.10.0"
+    "@types/yargs": "^15.0.5",
+    "ava": "^3.10.0",
+    "yargs": "^15.4.1"
   },
   "devDependencies": {
     "@ava/typescript": "^1.1.1",
     "@google/local-home-sdk": "^1.0.0",
+    "@types/cbor": "^5.0.0",
     "@types/node": "^13.11.1",
     "@typescript-eslint/eslint-plugin": "^3.7.0",
+    "cbor": "^5.0.2",
     "chalk": "^4.0.0",
     "eslint": "^7.5.0",
     "eslint-config-prettier": "^6.10.1",
@@ -29,6 +34,9 @@
     "gts": "^2.0.2",
     "prettier": "^2.0.5",
     "typescript": "^3.8.3"
+  },
+  "engines": {
+    "node": ">12.11.0"
   },
   "files": [
     "./build/src/**/*.ts",
