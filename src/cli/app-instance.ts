@@ -30,7 +30,9 @@ smarthomeStub.App = CliAppStub;
  * Validate the filepath.
  */
 try {
-  fs.existsSync(path.relative('./', workerData));
+  // Strips the file extension off the filepath,
+  const modulePath = workerData.substring(0, workerData.lastIndexOf('.'));
+  fs.existsSync(path.relative('./', modulePath));
 } catch (error) {
   throw new Error('File at path ' + workerData + ' not found.');
 }
@@ -60,31 +62,31 @@ if (parentPort !== null) {
   parentPort.on('message', async intentMessage => {
     if (intentMessage.intentType === 'IDENTIFY') {
       try {
-        // Parse as an IdentifyMessage
+        // Parse as an IdentifyMessage.
         const identifyMessage = intentMessage as IdentifyMessage;
 
-        // Trigger the Identify intent
+        // Trigger the Identify intent.
         const localDeviceId = await mockLocalHomePlatform.triggerIdentify(
           identifyMessage.requestId,
           Buffer.from(identifyMessage.discoveryBuffer, 'hex'),
           identifyMessage.deviceId
         );
 
-        // Report the registered localDeviceId
+        // Report the registered localDeviceId.
         console.log(
           'IDENTIFY handler triggered. localDeviceId: ' +
             localDeviceId +
             ' was registered to the platform '
         );
       } catch (error) {
-        // Log the full error to the console in case handler fails
+        // Log the full error to the console in case handler fails.
         console.log(
           'An error occured when triggering the Identify handler:\n' + error
         );
       }
     } else if (intentMessage.intentType === 'EXECUTE') {
       try {
-        // Parse as an ExecuteMessage
+        // Parse as an ExecuteMessage.
         const executeMessage = intentMessage as ExecuteMessage;
         const executeCommands = createSimpleExecuteCommands(
           executeMessage.localDeviceId,
@@ -93,7 +95,7 @@ if (parentPort !== null) {
           executeMessage.customData
         );
 
-        // Trigger an Execute intent
+        // Trigger an Execute intent.
         const executeResponse = await mockLocalHomePlatform.triggerExecute(
           executeMessage.requestId,
           [executeCommands]

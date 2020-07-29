@@ -14,7 +14,7 @@ export interface IntentMessage {
  * A class containing all parameters needed to process an Identify command.
  */
 export class IdentifyMessage implements IntentMessage {
-  intentType = 'INTENT';
+  intentType = 'IDENTIFY';
   requestId: string;
   discoveryBuffer: string;
   deviceId: string;
@@ -72,7 +72,7 @@ export class CommandProcessor {
     this.worker = worker;
   }
 
-  // Wrapper for argument parsing with yargs
+  // Wrapper for argument parsing with yargs.
   private async parseIntent(userCommand: string): Promise<IntentMessage> {
     const argv = await yargs()
       .option('intent_type', {
@@ -122,6 +122,7 @@ export class CommandProcessor {
         }
         return argv;
       });
+
     /**
      * Validate arguments and return an IntentMessage
      */
@@ -183,7 +184,7 @@ export class CommandProcessor {
       output: process.stdout,
     });
 
-    // Flag for signaling app exit
+    // Flag for signaling app exit.
     let exit = false;
     while (!exit) {
       // Wrap the asyncronous question/response sequence in a promise to delay execution.
@@ -194,16 +195,15 @@ export class CommandProcessor {
             return;
           }
 
+          //Parse the command.
+          const command = input.split(' ')[0];
+
           if (input === 'exit') {
-            // Set loop exit flag and return
+            // Set loop exit flag and return.
             exit = true;
             resolve();
             return;
           }
-
-          // Parses the first command
-          const commandindex = input.indexOf(' ');
-          const command = input.substr(0, commandindex);
 
           if (command !== 'send-intent') {
             console.log(
@@ -211,20 +211,23 @@ export class CommandProcessor {
                 command +
                 '\nValid commands: exit | send-intent'
             );
-            // Early exit on invalid command
+            // Early exit on invalid command.
             resolve();
             return;
           }
 
-          // After validating first command, parse with member
+          // After validating first command, parse with member.
           try {
-            const intentMessage = await this.parseIntent(
-              input.substring(commandindex)
-            );
+            let argumentString = '';
+            const commandEnd = input.indexOf(' ');
+            if (commandEnd !== -1) {
+              argumentString = input.substring(commandEnd + 1);
+            }
+            const intentMessage = await this.parseIntent(argumentString);
             // Post message to worker thread.
             this.worker.postMessage(intentMessage);
           } catch (error) {
-            // Print the error message and continue the loop
+            // Print the error message and continue the loop.
             console.log(error.message);
           }
           resolve();
@@ -232,7 +235,7 @@ export class CommandProcessor {
       });
     }
 
-    // Clean up the readline interface
+    // Clean up the readline interface.
     readlineInterface.close();
     return Promise.resolve();
   }
