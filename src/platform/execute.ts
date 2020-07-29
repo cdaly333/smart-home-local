@@ -64,14 +64,30 @@ export function createSimpleExecuteCommands(
 }
 
 /**
- * Implementation of smarthome.DataFlow.UpdResponseData for testing DeviceManager
+ * Implementation of smarthome.DataFlow.UpdResponseData
+ * for testing DeviceManager
  */
 export class UdpResponseData implements smarthome.DataFlow.UdpResponseData {
-  constructor(requestId: string, deviceId: string) {
+  constructor(
+    requestId: string,
+    deviceId: string,
+    udpResponse: smarthome.DataFlow.UdpResponse
+  ) {
     this.requestId = requestId;
     this.deviceId = deviceId;
+    this.udpResponse = udpResponse;
   }
+  udpResponse: smarthome.DataFlow.UdpResponse;
   requestId: string;
   deviceId: string;
   protocol: smarthome.Constants.Protocol = smarthome.Constants.Protocol.UDP;
+}
+
+export class UdpResponse implements smarthome.DataFlow.UdpResponse {
+  constructor(responsePackets?: string[]) {
+    if (responsePackets !== undefined) {
+      this.responsePackets = responsePackets;
+    }
+  }
+  responsePackets?: string[];
 }
