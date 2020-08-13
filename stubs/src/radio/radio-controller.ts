@@ -1,63 +1,58 @@
 import * as dgram from 'dgram';
-import {UdpResponse} from './dataflow';
+import {UdpResponse, UDPScanConfig, UDPScanResults} from './dataflow';
 
 /**
  * A default radio timeout, in milliseconds.
  */
 const RADIO_TIMEOUT = 2500;
-
 /**
- * A class to contain all parameters required to perform
- * a UDP scan.
+ * A helper function to create timeout promises.
+ * @returns  A new Promise that resolves after RADIO_TIMEOUT milliseconds.
  */
-export class UDPScanConfig {
-  broadcastAddress: string;
-  broadcastPort: number;
-  listenPort: number;
-  discoveryPacket: string;
-  /**
-   *
-   * @param broadcastAddress  The destination UDP broadcast address.
-   * @param broadcastPort  The destination UDP broadcast port.
-   * @param listenPort  The listen port for the UDP response.
-   * @param discoveryPacket  The payload to send in the UDP broadcast.
-   * @returns  A new `UDPScanConfig` instance.
-   */
-  constructor(
-    broadcastAddress: string,
-    broadcastPort: number,
-    listenPort: number,
-    discoveryPacket: string
-  ) {
-    this.broadcastAddress = broadcastAddress;
-    this.broadcastPort = broadcastPort;
-    this.listenPort = listenPort;
-    this.discoveryPacket = discoveryPacket;
-  }
-}
-
-/**
- * A class to contain the information from a UDP scan.
- */
-export interface UDPScanResults {
-  buffer: Buffer;
-  rinfo: dgram.RemoteInfo;
+export function createTimeoutPromise(timeout: number): Promise<void> {
+  return new Promise(resolve => {
+    setTimeout(resolve, timeout);
+  });
 }
 
 /**
  * A class to contain all Node radio functionality.
  */
-export class RadioController {
+export interface RadioController {
   /**
-   * A helper function to create timeout promises.
-   * @returns  A new Promise that resolves after RADIO_TIMEOUT milliseconds.
+   * Performs a UDP scan according to a `UDPScanConfig`.
+   * @param udpScanConfig  A scan configuration containing UDP parameters.
+   * @param timeout  How long in ms to wait before timing out the request.
+   * @return  A promise that resolves to the determined `UDPScanResults`
    */
-  private createTimeoutPromise(timeout: number): Promise<void> {
-    return new Promise(resolve => {
-      setTimeout(resolve, timeout);
-    });
-  }
+  udpScan(
+    udpScanConfig: UDPScanConfig,
+    timeout?: number
+  ): Promise<UDPScanResults>;
 
+  /**
+   * Sends a UDP message using the given parameters
+   * @param payload  The payload to send in the UDP message.
+   * @param address  The destination address of the UDP message.
+   * @param listenPort  The port to listen on for a response, if execting one.
+   * @param expectedResponsePackets  The number of responses to save before resolving.
+   * @param timeout  How long in ms to wait before timing out the request.
+   * @returns  A promise that resolves to the determined `UDPResponse`.
+   */
+  sendUdpMessage(
+    payload: Buffer,
+    address: string,
+    port: number,
+    listenPort: number,
+    expectedResponsePackets?: number,
+    timeout?: number
+  ): Promise<smarthome.DataFlow.UdpResponse>;
+}
+
+/**
+ * A class to contain all Node radio functionality.
+ */
+export class NodeRadioController implements RadioController {
   /**
    * Performs a UDP scan according to a `UDPScanConfig`.
    * @param udpScanConfig  A scan configuration containing UDP parameters.
@@ -103,7 +98,7 @@ export class RadioController {
     // Timeout if there hasn't been a response.
     return Promise.race([
       discoveryBuffer,
-      this.createTimeoutPromise(timeout).then(() => {
+      createTimeoutPromise(timeout).then(() => {
         // Close the socket if timed out
         socket.close();
         throw new Error(`UDP scan timed out after ${timeout}ms.`);
@@ -159,7 +154,7 @@ export class RadioController {
     // Timeout if still waiting for a response.
     return Promise.race([
       discoveryBuffer,
-      this.createTimeoutPromise(timeout).then(() => {
+      createTimeoutPromise(timeout).then(() => {
         socket.close();
         throw new Error(`UDP send timed out after ${timeout} ms.`);
       }),

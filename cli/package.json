@@ -1,0 +1,58 @@
+{
+  "name": "local-home-testing-cli",
+  "version": "0.0.1",
+  "description": "A command-line interface for interacting with Local Home SDK stubs.",
+  "private": true,
+  "author": "Google LLC.",
+  "license": "Apache-2.0",
+  "main": "./build/src/index.js",
+  "scripts": {
+    "compile": "tsc",
+    "test": "ava",
+    "clean": "gts clean",
+    "cli": "node ./build/src/cli/index.js",
+    "lint": "eslint './src/**/*.ts' './test/**/*.ts'"
+  },
+  "dependencies": {
+    "local-home-testing": "file:../stubs",
+    "yargs": "^15.4.1"
+  },
+  "devDependencies": {
+    "ava": "^3.10.0",
+    "@ava/typescript": "^1.1.1",
+    "@google/local-home-sdk": "^1.1.0",
+    "@types/node": "^13.11.1",
+    "@types/yargs": "^15.0.5",
+    "@typescript-eslint/eslint-plugin": "^3.7.0",
+    "chalk": "^4.0.0",
+    "eslint": "^7.5.0",
+    "eslint-config-prettier": "^6.10.1",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^3.1.2",
+    "esm": "^3.2.25",
+    "gts": "^2.0.2",
+    "prettier": "^2.0.5",
+    "typescript": "^3.8.3"
+  },
+  "engines": {
+    "node": ">12.11.0"
+  },
+  "files": [
+    "./build/src/**/*.ts",
+    "./build/test/example/**/*.ts"
+  ],
+  "ava": {
+    "files": [
+      "test/**/*",
+      "!test/**/*fixtures.ts"
+    ],
+    "require": [
+      "esm"
+    ],
+    "typescript": {
+      "rewritePaths": {
+        "test/": "build/test/"
+      }
+    }
+  }
+}
