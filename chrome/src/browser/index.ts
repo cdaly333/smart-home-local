@@ -62,23 +62,38 @@ class ChromeAppStub extends AppStub {
 smarthomeStub.App = ChromeAppStub;
 export const smarthome = smarthomeStub;
 
+/**
+ * Listen for the app bundle being selected.
+ */
 const filePicker = document.getElementById('file-picker');
 if (filePicker) {
   filePicker.addEventListener('change', async event => {
     const files = (event.target as HTMLInputElement).files;
     if (files) {
+      // Run the javascript.
       eval(await files[0].text());
       filePicker.remove();
     }
   });
 }
 
+/**
+ * Create an instance of PlatformController to manage all components.
+ */
 const platformController = new PlatformController(saveAppStub);
 
+/**
+ * A helper function to return the value of input fields.
+ * @param id  The id of the element to get the value of.
+ */
 function getElementValue(id: string) {
   return (<HTMLInputElement>document.getElementById(id)).value;
 }
 
+/**
+ * Fetches all UDP scan parameters from their respective input fields
+ * and forwards them to the `PlatformController`.
+ */
 export function onUdpScanButton() {
   const requestId = getElementValue('udp-request-id');
   const deviceId = getElementValue('udp-device-id');
@@ -95,6 +110,10 @@ export function onUdpScanButton() {
   platformController.udpScan(requestId, scanConfig, deviceId!);
 }
 
+/**
+ * Fetches all Execute intent parameters from their respective input fields
+ * and forwards them to the `PlatformController`.
+ */
 export function onExecuteButton() {
   const requestId = getElementValue('execute-request-id');
   const deviceId = getElementValue('execute-device-id');
