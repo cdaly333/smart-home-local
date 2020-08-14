@@ -2,6 +2,7 @@ import {
   RadioController,
   UDPScanConfig,
   UDPScanResults,
+  UdpResponseData,
 } from 'local-home-testing/build/src/radio';
 import {
   UdpScanRequest,
@@ -21,47 +22,54 @@ export class ProxyRadioClient implements RadioController {
   constructor(port = 5000) {
     this.webSocket = new WebSocket('ws://localhost:' + port.toString());
     this.webSocket.onopen = event => {
-      console.log('Connection established with server.')!;
+      console.log('Connection established with proxy server.')!;
     };
-    this.webSocket.onmessage = this.handleMessageEvent;
+    this.webSocket.onmessage = event => {
+      this.handleMessageEvent(event);
+    };
   }
 
   private handleMessageEvent(event: MessageEvent) {
     const response: ProxyResponse = JSON.parse(event.data as string);
+    if (response.error) {
+      console.error(
+        `A radio request of type ${response.proxyMessageType} returned with an error:\n${response.error}`
+      );
+    }
     switch (response.proxyMessageType) {
       case 'UDPSCAN': {
         if (this.onUdpScanResponse) {
           this.onUdpScanResponse(response as UdpScanResponse);
-          this.onUdpScanResponse = undefined;
         }
+        this.onUdpScanResponse = undefined;
         break;
       }
       case 'UDPSEND': {
         if (this.onUdpSendResponse) {
           this.onUdpSendResponse(response as UdpSendResponse);
-          this.onUdpScanResponse = undefined;
         }
+        this.onUdpSendResponse = undefined;
         break;
       }
     }
   }
 
-  udpScan(
+  async udpScan(
     udpScanConfig: UDPScanConfig,
     timeout?: number | undefined
   ): Promise<UDPScanResults> {
+    const scanRequest = new UdpScanRequest(udpScanConfig);
     if (this.onUdpScanResponse) {
       throw new Error(
-        'Cannot start new UDP scan: another scan is in progress.'
+        'Cannot start a new UDP scan: another scan is in progress.'
       );
     }
-    const scanRequest = new UdpScanRequest(udpScanConfig);
-    this.webSocket.send(JSON.stringify(scanRequest));
     //TODO(cjdaly) timeout
-    return new Promise<UDPScanResults>(resolve => {
+    return new Promise<UDPScanResults>((resolve, reject) => {
       this.onUdpScanResponse = (udpScanResponse: UdpScanResponse) => {
         resolve(udpScanResponse.udpScanResults);
       };
+      this.webSocket.send(JSON.stringify(scanRequest));
     });
   }
 
@@ -84,12 +92,12 @@ export class ProxyRadioClient implements RadioController {
       Buffer.from(payload).toString('hex'),
       port
     );
-    this.webSocket.send(JSON.stringify(sendRequest));
     //TODO(cjdaly) timeout
-    return new Promise<smarthome.DataFlow.UdpResponse>(resolve => {
-      this.onUdpSendResponse = (UdpSendResponse: UdpSendResponse) => {
-        resolve(UdpSendResponse.udpResponse);
+    return new Promise<smarthome.DataFlow.UdpResponse>((resolve, reject) => {
+      this.onUdpSendResponse = (udpSendResponse: UdpSendResponse) => {
+        resolve(udpSendResponse.udpResponse);
       };
+      this.webSocket.send(JSON.stringify(sendRequest));
     });
   }
 }

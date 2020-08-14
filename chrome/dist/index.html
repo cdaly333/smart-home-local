@@ -1,11 +1,74 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="UTF-8" />
-    <title>Local Home SDK App</title>
-    <script type="module" src="main.js"></script>
-  </head>
-  <body>
-    <script defer type="text/javascript" src="bundle.js"></script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Local Home SDK App</title>
+  <script type="module" src="main.js"></script>
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body>
+  <div id="file-picker">
+    <label for="app-file-picker"><b>Load App Bundle</b></label>
+    <input id="app-file-picker" type="file">
+  </div>
+  <form action="javascript:localHomePlatform.onUdpScanButton();">
+    <div class="container">
+      <h2>UDP Scan</h2>
+      <hr>
+
+      <label for="udp-request-id"><b>Request ID</b></label>
+      <input type="text" id="udp-request-id" required>
+
+      <label for="udp-device-id"><b>Device ID</b></label>
+      <input type="text" id="udp-device-id" required>
+
+      <label for="udp-broadcast-address"><b>Broadcast Address</b></label>
+      <input type="text" id="udp-broadcast-address" required>
+
+      <label for="udp-broadcast-port"><b>Broadcast Port</b></label>
+      <input type="text" id="udp-broadcast-port" required>
+
+      <label for="udp-listen-port"><b>Listen Port</b></label>
+      <input type="text" id="udp-listen-port" required>
+
+      <label for="udp-discovery-packet"><b>Discovery Packet</b></label>
+      <input type="text" id="udp-discovery-packet" required>
+
+      <hr>
+
+      <button type="Start Scan" class="submit-button">Submit</button>
+  </form>
+
+  <form action="javascript:localHomePlatform.onExecuteButton();">
+    <h2>EXECUTE intent</h2>
+    <hr>
+
+    <label for="execute-request-id"><b>Request ID</b></label>
+    <input type="text" id="execute-request-id" required>
+
+    <label for="execute-device-id"><b>Device ID</b></label>
+    <input type="text" id="execute-device-id" required>
+
+    <label for="execute-command"><b>Execute Command</b></label>
+    <input type="text" id="execute-command" required>
+
+    <label for="execute-params"><b><i>params</i> JSON</b></label>
+    <input type="text" id="execute-params" required>
+
+    <label for="execute-custom-data"><b><i>customData</i> JSON</b></label>
+    <input type="text" id="execute-custom-data" required>
+
+    <hr>
+
+    <button type="Send Intent" class="submit-button">Submit</button>
+  </form>
+  </div>
+
+  <div class="container" id="log">
+  </div>
+
+</body>
+
 </html>

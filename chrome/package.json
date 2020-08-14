@@ -6,11 +6,11 @@
   "author": "Google LLC.",
   "license": "Apache-2.0",
   "scripts": {
-    "build": "webpack --config webpack.config.js",
+    "build": "npm run compile && webpack --config webpack.config.js",
     "compile": "tsc",
     "test": "ava",
     "clean": "gts clean",
-    "cli": "node ./build/src/cli/index.js",
+    "proxy": "node ./build/src/node/index.js",
     "lint": "eslint './src/**/*.ts' './test/**/*.ts'"
   },
   "dependencies": {

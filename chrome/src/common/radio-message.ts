@@ -3,13 +3,14 @@ import {
   UDPScanResults,
 } from 'local-home-testing/build/src/radio';
 
-export type RadioMessageType = 'UDPSCAN' | 'UDPSEND' | 'ERROR';
+export type RadioMessageType = 'UDPSCAN' | 'UDPSEND';
 
 export interface ProxyRequest {
   proxyMessageType: RadioMessageType;
 }
 export interface ProxyResponse {
-  proxyMessageType: RadioMessageType;
+  proxyMessageType: RadioMessageType | undefined;
+  error: undefined | string;
 }
 
 export class UdpScanRequest implements ProxyRequest {
@@ -41,24 +42,20 @@ export class UdpSendRequest implements ProxyRequest {
 
 export class UdpScanResponse implements ProxyResponse {
   proxyMessageType: RadioMessageType = 'UDPSCAN';
-  udpScanResults: UDPScanResults;
-  constructor(udpScanResults: UDPScanResults, errorString = '') {
+  error: undefined | string;
+  udpScanResults: UDPScanResults | undefined;
+  constructor(udpScanResults?: UDPScanResults, error = '') {
     this.udpScanResults = udpScanResults;
+    this.error = error;
   }
 }
 
 export class UdpSendResponse implements ProxyResponse {
   proxyMessageType: RadioMessageType = 'UDPSEND';
-  udpResponse: smarthome.DataFlow.UdpResponse;
-  constructor(udpResponse: smarthome.DataFlow.UdpResponse, errorString = '') {
+  error: string | undefined;
+  udpResponse: smarthome.DataFlow.UdpResponse | undefined;
+  constructor(udpResponse?: smarthome.DataFlow.UdpResponse, error?: string) {
     this.udpResponse = udpResponse;
-  }
-}
-
-export class ProxyError implements ProxyResponse {
-  proxyMessageType: RadioMessageType = 'ERROR';
-  public errorMessage: string;
-  constructor(errorMessage: string) {
-    this.errorMessage = errorMessage;
+    this.error = error;
   }
 }

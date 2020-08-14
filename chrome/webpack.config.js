@@ -12,6 +12,7 @@
  */
 
 const path = require('path');
+const webpack = require('webpack');
 
 module.exports = {
   mode: 'production',
@@ -22,5 +23,8 @@ module.exports = {
     filename: 'main.js',
     library: 'localHomePlatform',
     libraryTarget: 'window',
+  },
+  node: {
+    Buffer: true,
   },
 };

@@ -1,10 +1,9 @@
-import * as ws from 'ws';
+import WebSocket, * as ws from 'ws';
 import {
   ProxyRequest,
   UdpSendRequest,
   UdpScanRequest,
   UdpScanResponse,
-  ProxyError,
   UdpSendResponse,
 } from '../common/radio-message';
 import {NodeRadioController} from 'local-home-testing/build/src/radio';
@@ -22,44 +21,54 @@ export class ProxyRadioServer {
     this.webSocketServer.on('connection', socket => {
       console.log('Connection established');
       socket.on('message', async message => {
+        console.log(`received ${message}`);
         const radioMessage: ProxyRequest = JSON.parse(message as string);
         switch (radioMessage.proxyMessageType) {
           case 'UDPSCAN': {
-            const udpScanRequest = radioMessage as UdpScanRequest;
-            //TODO(cjdaly): move into function
-            console.log('Received UdpScanRequest.');
-            try {
-              const udpScanResponse = new UdpScanResponse(
-                await this.nodeRadioController.udpScan(
-                  udpScanRequest.udpScanConfig
-                )
-              );
-              socket.send(JSON.stringify(udpScanResponse));
-            } catch (error) {
-              socket.send(new ProxyError(error));
-            }
+            this.handleUdpScan(radioMessage as UdpScanRequest, socket);
             break;
           }
           case 'UDPSEND': {
-            const udpSendRequest = radioMessage as UdpSendRequest;
-            console.log('Received UdpSendRequest.');
-            try {
-              const udpSendResponse = new UdpSendResponse(
-                await this.nodeRadioController.sendUdpMessage(
-                  Buffer.from(udpSendRequest.payload, 'hex'),
-                  udpSendRequest.address,
-                  udpSendRequest.port,
-                  udpSendRequest.listenPort
-                )
-              );
-              socket.send(JSON.stringify(udpSendResponse));
-            } catch (error) {
-              socket.send(new ProxyError(error));
-            }
+            this.handleUdpSend(radioMessage as UdpSendRequest, socket);
             break;
           }
         }
       });
     });
+  }
+
+  private async handleUdpScan(
+    udpScanRequest: UdpScanRequest,
+    socket: WebSocket
+  ): Promise<void> {
+    try {
+      const udpScanResponse = new UdpScanResponse(
+        await this.nodeRadioController.udpScan(udpScanRequest.udpScanConfig)
+      );
+      socket.send(JSON.stringify(udpScanResponse));
+    } catch (error) {
+      const errorResponse = new UdpScanResponse(undefined, error.message);
+      socket.send(JSON.stringify(errorResponse));
+    }
+  }
+
+  private async handleUdpSend(
+    udpSendRequest: UdpSendRequest,
+    socket: WebSocket
+  ): Promise<void> {
+    try {
+      const udpSendResponse = new UdpSendResponse(
+        await this.nodeRadioController.sendUdpMessage(
+          Buffer.from(udpSendRequest.payload, 'hex'),
+          udpSendRequest.address,
+          udpSendRequest.port,
+          udpSendRequest.listenPort
+        )
+      );
+      socket.send(JSON.stringify(udpSendResponse));
+    } catch (error) {
+      const errorResponse = new UdpSendResponse(undefined, error.message);
+      socket.send(errorResponse);
+    }
   }
 }

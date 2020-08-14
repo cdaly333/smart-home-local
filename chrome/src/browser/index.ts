@@ -1,26 +1,54 @@
-import {
-  smarthomeStub,
-  AppStub,
-  extractStubs,
-  MockLocalHomePlatform,
-  createSimpleExecuteCommands,
-} from 'local-home-testing';
-import {ProxyRadioClient} from './proxy-client';
-import {RadioDeviceManager} from 'local-home-testing/build/src/radio/radio-device-manager';
+/**
+ * The entry point for the Chrome app.
+ */
+import {smarthomeStub, AppStub} from 'local-home-testing';
+import {PlatformController} from './platform-controller';
 import {UDPScanConfig} from 'local-home-testing/build/src/radio/dataflow';
-// inject stubsmarthomeStubs
 
-let appStubInstance: AppStub | undefined = undefined;
+/**
+ * Initialize the UI.
+ * Redefine all `console.log` and `console.error` calls to log
+ * to an element in the page.
+ */
+const logElement = document.getElementById('log');
+if (logElement) {
+  const modifiedConsole: any = console;
+  modifiedConsole.defaultlog = console.log;
+  modifiedConsole.log = (message: string) => {
+    modifiedConsole.defaultlog(message);
+    if (logElement) {
+      logElement.innerHTML += `${getTimestamp()}<br/>${message}<br/>`;
+      // Scrolls to the bottom of the element
+      logElement.scrollTop = logElement.scrollHeight;
+    }
+  };
+  modifiedConsole.error = modifiedConsole.log;
+}
 
+/**
+ * A helper function to produce a readable timestamp prefix to differentiate calls.
+ */
+function getTimestamp() {
+  return `[${new Date().toLocaleTimeString()}]: `;
+}
+
+/**
+ * Callback to hook into app initialization.
+ */
 let onAppInitialized: (app: AppStub) => void | undefined;
 
-const saveAppStub = new Promise(resolve => {
+/**
+ * A promise to resolve when the app constructor gets called.
+ */
+const saveAppStub = new Promise<AppStub>(resolve => {
   onAppInitialized = (app: AppStub) => {
-    appStubInstance = app;
-    resolve();
+    resolve(app);
   };
 });
 
+/**
+ * Override the constructor to access the stub on creation.
+ */
 class ChromeAppStub extends AppStub {
   constructor(version: string) {
     super(version);
@@ -28,103 +56,56 @@ class ChromeAppStub extends AppStub {
   }
 }
 
+/**
+ * Set the global dependencies.
+ */
 smarthomeStub.App = ChromeAppStub;
-(globalThis as any).smarthome = smarthomeStub;
 export const smarthome = smarthomeStub;
-console.log('Stubs injected.');
 
-let mockLocalHomePlatform: MockLocalHomePlatform | undefined;
-const proxyRadioClient = new ProxyRadioClient();
-let radioDeviceManager: RadioDeviceManager | undefined;
-
-export async function udpScan(
-  requestId: string,
-  scanConfig: UDPScanConfig,
-  deviceId: string
-): Promise<void> {
-  if (mockLocalHomePlatform === null) {
-    return;
-  }
-  try {
-    const scanRemoteInfo = await proxyRadioClient.udpScan(scanConfig);
-    // Trigger the identifyHandler with scan results.
-    await mockLocalHomePlatform!.triggerIdentify(
-      requestId,
-      scanRemoteInfo.buffer,
-      deviceId
-    );
-    // Save association between deviceId and local IP address.
-    radioDeviceManager!.addDeviceIdToAddress(
-      deviceId,
-      scanRemoteInfo.rinfo.address
-    );
-  } catch (error) {
-    console.error('UDP scan failed:\n' + error);
-  }
+const filePicker = document.getElementById('file-picker');
+if (filePicker) {
+  filePicker.addEventListener('change', async event => {
+    const files = (event.target as HTMLInputElement).files;
+    if (files) {
+      eval(await files[0].text());
+      filePicker.remove();
+    }
+  });
 }
 
-export async function identify(
-  requestId: string,
-  discoveryBuffer: string,
-  deviceId: string
-): Promise<void> {
-  if (mockLocalHomePlatform === null) {
-    return;
-  }
-  try {
-    await mockLocalHomePlatform!.triggerIdentify(
-      requestId,
-      Buffer.from(discoveryBuffer, 'hex'),
-      deviceId
-    );
-  } catch (error) {
-    console.error(
-      'An Error occured while triggering the identifyHandler: ' + error
-    );
-  }
+const platformController = new PlatformController(saveAppStub);
+
+function getElementValue(id: string) {
+  return (<HTMLInputElement>document.getElementById(id)).value;
 }
 
-export async function execute(
-  requestId: string,
-  localDeviceId: string,
-  executeCommand: string,
-  params: Record<string, unknown>,
-  customData: Record<string, unknown>
-): Promise<void> {
-  if (mockLocalHomePlatform === null) {
-    return;
-  }
-  try {
-    const executeCommands = createSimpleExecuteCommands(
-      localDeviceId,
-      executeCommand!,
-      params,
-      customData
-    );
-    // Trigger an Execute intent.
-    const executeResponse = await mockLocalHomePlatform!.triggerExecute(
-      requestId,
-      [executeCommands]
-    );
-    // Report the ExecuteResponse if succesful.
-    console.log(
-      'Execute handler triggered. ExecuteResponse was:\n' +
-        JSON.stringify(executeResponse)
-    );
-  } catch (error) {
-    console.error(
-      'An error occured when triggering the Execute handler:\n' +
-        error.toString()
-    );
-  }
+export function onUdpScanButton() {
+  const requestId = getElementValue('udp-request-id');
+  const deviceId = getElementValue('udp-device-id');
+  const broadcastAddress = getElementValue('udp-broadcast-address');
+  const broadcastPort = getElementValue('udp-broadcast-port');
+  const listenPort = getElementValue('udp-listen-port');
+  const discoveryPacket = getElementValue('udp-discovery-packet');
+  const scanConfig = new UDPScanConfig(
+    broadcastAddress,
+    parseInt(broadcastPort),
+    parseInt(listenPort),
+    discoveryPacket
+  );
+  platformController.udpScan(requestId, scanConfig, deviceId!);
 }
 
-async function listenForCommands() {
-  await saveAppStub;
-  mockLocalHomePlatform = extractStubs(appStubInstance!).mockLocalHomePlatform;
-  radioDeviceManager = new RadioDeviceManager(proxyRadioClient);
-  mockLocalHomePlatform.setDeviceManager(radioDeviceManager);
-  console.log('smarthome.App constructor loaded.  Ready for intents.');
+export function onExecuteButton() {
+  const requestId = getElementValue('execute-request-id');
+  const deviceId = getElementValue('execute-device-id');
+  const command = getElementValue('execute-command');
+  const params = getElementValue('execute-params');
+  const customData = getElementValue('execute-custom-data');
+  platformController.execute(
+    requestId,
+    deviceId,
+    command,
+    JSON.parse(params),
+    JSON.parse(customData)
+  );
 }
-
-listenForCommands();
