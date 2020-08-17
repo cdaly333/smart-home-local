@@ -18,7 +18,7 @@ To run the app, you'll need a couple shell instances:
 **2. Start the Chrome client:**
 
 - `npm run host` to serve the Chrome client.
-- Open `localhost:4321` in Chrome.
+- Open `localhost:5000` in Chrome.
 
 ## References & Issues
 
