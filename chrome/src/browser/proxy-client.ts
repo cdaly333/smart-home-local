@@ -27,7 +27,7 @@ export class ProxyRadioClient implements RadioController {
    * Establishes the local WebSocket connection.
    * @returns  A new `ProxyRadioClient` instance.
    */
-  constructor(port = 5000) {
+  constructor(port = 4321) {
     this.webSocket = new WebSocket('ws://localhost:' + port.toString());
     this.webSocket.onopen = event => {
       console.log('Connection established with proxy server.')!;

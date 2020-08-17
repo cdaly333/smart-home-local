@@ -8,7 +8,7 @@ TODO(cjdaly) update usage
 
 **To start a virtual device:**
 
-`npm start -- --udp_discovery_port 3320 --udp_discovery_packet ff --device_id local-device-id`
+`npm start -- --udp_discovery_port 3320 --udp_discovery_packet ff --device_id local-device-id --control_protocol UDP`
 
 **Example Commands:**
 

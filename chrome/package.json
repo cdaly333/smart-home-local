@@ -6,11 +6,11 @@
   "author": "Google LLC.",
   "license": "Apache-2.0",
   "scripts": {
-    "build": "npm run compile && webpack --config webpack.config.js",
     "compile": "tsc",
-    "test": "ava",
     "clean": "gts clean",
+    "build": "npm run compile && webpack --config webpack.config.js",
     "proxy": "node ./build/src/node/index.js",
+    "host": "npx serve ./dist/",
     "lint": "eslint './src/**/*.ts' './test/**/*.ts'"
   },
   "dependencies": {
@@ -18,7 +18,6 @@
     "ws": "^7.3.1"
   },
   "devDependencies": {
-    "@ava/typescript": "^1.1.1",
     "@google/local-home-sdk": "^1.1.0",
     "@types/node": "^13.11.1",
     "@types/ws": "^7.2.6",
@@ -28,7 +27,6 @@
     "eslint-config-prettier": "^6.10.1",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-prettier": "^3.1.2",
-    "esm": "^3.2.25",
     "gts": "^2.0.2",
     "prettier": "^2.0.5",
     "typescript": "^3.8.3",
@@ -41,19 +39,5 @@
   "files": [
     "./build/src/**/*.ts",
     "./build/test/example/**/*.ts"
-  ],
-  "ava": {
-    "files": [
-      "test/**/*",
-      "!test/**/*fixtures.ts"
-    ],
-    "require": [
-      "esm"
-    ],
-    "typescript": {
-      "rewritePaths": {
-        "test/": "build/test/"
-      }
-    }
-  }
+  ]
 }

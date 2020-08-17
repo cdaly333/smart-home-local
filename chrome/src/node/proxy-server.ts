@@ -16,7 +16,7 @@ export class ProxyRadioServer {
   private webSocketServer: ws.Server;
   private nodeRadioController: NodeRadioController;
 
-  constructor(port = 5000) {
+  constructor(port = 4321) {
     this.webSocketServer = new ws.Server({port});
     // Instantiate a radio controller.
     this.nodeRadioController = new NodeRadioController();
