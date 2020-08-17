@@ -8,7 +8,7 @@
   "scripts": {
     "compile": "tsc",
     "clean": "gts clean",
-    "build": "npm run compile && webpack --config webpack.config.js",
+    "build": "webpack --config webpack.config.js",
     "proxy": "node ./build/src/node/index.js",
     "host": "npx serve ./dist/",
     "lint": "eslint './src/**/*.ts' './test/**/*.ts'"
@@ -38,6 +38,8 @@
   },
   "files": [
     "./build/src/**/*.ts",
-    "./build/test/example/**/*.ts"
+    "./dist/index.html",
+    "./dist/style.css",
+    "./dist/main.js"
   ]
 }
