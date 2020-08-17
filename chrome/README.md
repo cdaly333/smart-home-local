@@ -15,10 +15,10 @@ To run the app, you'll need a couple shell instances:
 
 - `npm run proxy` to start the node proxy server.
 
-**2. Start the chrome client:**
+**2. Start the Chrome client:**
 
-- `npm run host` to serve the chrome client.
-- Open `localhost:4321` in your chrome.
+- `npm run host` to serve the Chrome client.
+- Open `localhost:4321` in Chrome.
 
 ## References & Issues
 
