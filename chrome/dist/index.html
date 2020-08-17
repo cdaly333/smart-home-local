@@ -9,12 +9,13 @@
 </head>
 
 <body>
-  <div id="file-picker">
-    <label for="app-file-picker"><b>Load App Bundle</b></label>
+  <div id="file-picker-wrapper">
+    <label for="app-file-picker"><b>Load App Bundle: </b></label>
     <input id="app-file-picker" type="file">
   </div>
   <form action="javascript:localHomePlatform.onUdpScanButton();">
     <div class="container">
+      <hr>
       <h2>UDP Scan</h2>
       <hr>
 
@@ -36,12 +37,11 @@
       <label for="udp-discovery-packet"><b>Discovery Packet</b></label>
       <input type="text" id="udp-discovery-packet" required>
 
-      <hr>
-
       <button type="Start Scan" class="submit-button">Submit</button>
   </form>
 
   <form action="javascript:localHomePlatform.onExecuteButton();">
+    <hr>
     <h2>EXECUTE intent</h2>
     <hr>
 
@@ -59,8 +59,6 @@
 
     <label for="execute-custom-data"><b><i>customData</i> JSON</b></label>
     <input type="text" id="execute-custom-data" required>
-
-    <hr>
 
     <button type="Send Intent" class="submit-button">Submit</button>
   </form>

@@ -70,7 +70,7 @@ export class NodeRadioController implements RadioController {
       socket.on('message', (buffer, rinfo) => {
         // Close the socket.
         socket.close();
-        resolve({buffer, rinfo});
+        resolve({scanData: buffer.toString('hex'), rinfo});
       });
 
       // Enable UDP broadcast.
@@ -137,17 +137,19 @@ export class NodeRadioController implements RadioController {
           }
         });
         // Start listening for responses.
-        socket.bind(listenPort);
-        // Send the UDP message, forwarding the given parameters.
-        socket.send(payload, port, address, error => {
-          if (error) {
-            throw new Error(`Failed to send UDP message: ${error.message}`);
-          }
-          console.log('Sent UDP message: ', payload);
-          if (expectedResponsePackets === 0) {
-            // Resolve early if we aren't expecting any response.
-            resolve(new UdpResponse());
-          }
+        socket.bind(listenPort, () => {
+          // Send the UDP message, forwarding the given parameters.
+          socket.send(payload, port, address, error => {
+            if (error) {
+              throw new Error(`Failed to send UDP message: ${error.message}`);
+            }
+            console.log('Sent UDP message: ', payload);
+            if (expectedResponsePackets === 0) {
+              // Resolve early if we aren't expecting any response.
+              socket.close();
+              resolve(new UdpResponse());
+            }
+          });
         });
       }
     );

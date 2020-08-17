@@ -10,6 +10,7 @@ import {NodeRadioController} from 'local-home-testing/build/src/radio';
 
 /**
  * A WebSocket server that runs on node to provide radio fulfillment.
+ * Uses the `NodeRadioController` implementation to fulfill requests.
  */
 export class ProxyRadioServer {
   private webSocketServer: ws.Server;
@@ -17,12 +18,17 @@ export class ProxyRadioServer {
 
   constructor(port = 5000) {
     this.webSocketServer = new ws.Server({port});
+    // Instantiate a radio controller.
     this.nodeRadioController = new NodeRadioController();
+    /**
+     * Handle connection and message events.
+     */
     this.webSocketServer.on('connection', socket => {
       console.log('Connection established');
       socket.on('message', async message => {
         console.log(`received ${message}`);
         const radioMessage: ProxyRequest = JSON.parse(message as string);
+        // Route messages to corresponding message handlers.
         switch (radioMessage.proxyMessageType) {
           case 'UDPSCAN': {
             this.handleUdpScan(radioMessage as UdpScanRequest, socket);
@@ -37,6 +43,12 @@ export class ProxyRadioServer {
     });
   }
 
+  /**
+   * Uses the internal `NodeRadioController` to fulfill the UDP scan request.
+   * Formats the response and sends it across the socket.
+   * @param udpScanRequest  A UDP scan request to fulfill and respond to.
+   * @param socket  The socket to respond on.
+   */
   private async handleUdpScan(
     udpScanRequest: UdpScanRequest,
     socket: WebSocket
@@ -52,6 +64,12 @@ export class ProxyRadioServer {
     }
   }
 
+  /**
+   * Uses the internal `NodeRadioController` to fulfill the send request.
+   * Formats the response and sends it across the socket.
+   * @param udpScanRequest  A UDP send request to fulfill and respond to.
+   * @param socket  The socket to respond on.
+   */
   private async handleUdpSend(
     udpSendRequest: UdpSendRequest,
     socket: WebSocket

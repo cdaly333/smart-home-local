@@ -87,6 +87,12 @@ export class CommandProcessor {
       )
       .command('trigger-execute', 'Trigger an Execute command.', yargs => {
         return yargs
+          .option('request_id', {
+            describe: 'The request Id',
+            type: 'string',
+            demandOption: false,
+            default: 'sample-request-id',
+          })
           .option('local_device_id', {
             describe: 'The local device Id',
             type: 'string',

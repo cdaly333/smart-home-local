@@ -8,25 +8,48 @@ import {
 } from 'local-home-testing';
 import {ProxyRadioClient} from './proxy-client';
 
-export class PlatformController {
+/**
+ * A class to handle radio intialization and interaction between the platform.
+ * Wraps platform functions to abstract from static DOM code.
+ */
+export class PlatformCoordinator {
   private mockLocalHomePlatform: MockLocalHomePlatform | undefined;
   private proxyRadioClient: ProxyRadioClient | undefined;
   private radioDeviceManager: RadioDeviceManager | undefined;
 
+  /**
+   * Creates a new `PlatformCoordinator` instance.
+   * Handles radio initialization and
+   * @param appStubPromise  A promise that resolves to an app stub to capture.
+   * @returns  A new `PlatformController` instance.
+   */
   constructor(appStubPromise: Promise<AppStub>) {
     this.initializePlatform(appStubPromise);
   }
 
+  /**
+   * Initializes the platform to receive actions.
+   * Injects radio dependencies.
+   * @param appStubPromise A promise that resolves to an app stub to capture.
+   */
   private async initializePlatform(appStubPromise: Promise<AppStub>) {
     console.log('Awaiting smarthome.app constructor...');
+    // Wait for an app through this promise
     const appStub = await appStubPromise;
     this.mockLocalHomePlatform = extractStubs(appStub!).mockLocalHomePlatform;
     this.proxyRadioClient = new ProxyRadioClient();
+    // Save a `DeviceManager` that is already downcast.
     this.radioDeviceManager = new RadioDeviceManager(this.proxyRadioClient);
     this.mockLocalHomePlatform.setDeviceManager(this.radioDeviceManager);
     console.log('Platform initalized.  Awaiting input.');
   }
 
+  /**
+   * Performs a UDP Scan using a `ProxyRadioClient`.
+   * @param requestId  The requestId of the request to send to fulfillment on discovery.
+   * @param scanConfig  The UDP scan configuration.
+   * @param deviceId  The deviceId to pass in the request.
+   */
   public async udpScan(
     requestId: string,
     scanConfig: UDPScanConfig,
@@ -55,27 +78,15 @@ export class PlatformController {
     }
   }
 
-  public async identify(
-    requestId: string,
-    discoveryBuffer: string,
-    deviceId: string
-  ): Promise<void> {
-    if (this.mockLocalHomePlatform === null) {
-      return;
-    }
-    try {
-      await this.mockLocalHomePlatform!.triggerIdentify(
-        requestId,
-        Buffer.from(discoveryBuffer, 'hex'),
-        deviceId
-      );
-    } catch (error) {
-      console.error(
-        `An Error occured while triggering the identifyHandler:\n${error}`
-      );
-    }
-  }
-
+  /**
+   * Wraps an asyncronous call to the fulfillment's Execute handler.
+   * Execute handler and handles errors.
+   * @param requestId  The Execute request ID.
+   * @param deviceId  The device ID to resolve a destination address from.
+   * @param executeCommand  The single execute command to send to the device.
+   * @param params  The Execute request params field, as a JSON string.
+   * @param customData  The Execute request customData field, as a JSON string.
+   */
   public async execute(
     requestId: string,
     deviceId: string,

@@ -12,7 +12,7 @@ TODO(cjdaly) update usage
 
 **Example Commands:**
 
-`udp-scan --broadcast_address localhost --broadcast_port 3320 --listen_port 3311 --discovery_packet ff`
+`udp-scan --broadcast_address localhost --broadcast_port 3320 --listen_port 3311 --discovery_packet ff --device_id local-device-id`
 
 `simulate-identify --request_id sample-request-id --discovery_buffer ff --device_id test-device-id-simulate`
 
